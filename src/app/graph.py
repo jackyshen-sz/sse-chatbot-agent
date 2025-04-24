@@ -1,26 +1,34 @@
-from langgraph_swarm import create_swarm
+from langchain_openai import ChatOpenAI
+from langgraph.prebuilt import create_react_agent
+from langgraph_supervisor import create_supervisor
 
-from app.agents.agent_factory import get_agents
-from app.config import settings
-from app.core.async_utils import run_async
-from app.llm.sse_llm import create_llm
+def book_hotel(hotel_name: str):
+    """Book a hotel"""
+    return f"Successfully booked a stay at {hotel_name}."
 
-context = {
-  "openai_type": "together",
-  "api_key": settings.TOGETHER_API_KEY,
-  "model": settings.DEFAULT_MODEL,
-}
+def book_flight(from_airport: str, to_airport: str):
+    """Book a flight"""
+    return f"Successfully booked a flight from {from_airport} to {to_airport}."
 
-llm = create_llm(context.get("openai_type"), context)
+flight_assistant = create_react_agent(
+    model="openai:gpt-4o",
+    tools=[book_flight],
+    prompt="You are a flight booking assistant",
+    name="flight_assistant"
+)
 
-agents = run_async(get_agents, llm)
+hotel_assistant = create_react_agent(
+    model="openai:gpt-4o",
+    tools=[book_hotel],
+    prompt="You are a hotel booking assistant",
+    name="hotel_assistant"
+)
 
-agent_graphs = [
-  agent.agent_graph
-  for agent in agents
-]
-
-graph = create_swarm(
-  agents=agent_graphs,
-  default_active_agent="llm"
+graph = create_supervisor(
+    agents=[flight_assistant, hotel_assistant],
+    model=ChatOpenAI(model="gpt-4o"),
+    prompt=(
+        "You manage a hotel booking assistant and a"
+        "flight booking assistant. Assign work to them."
+    )
 ).compile()
