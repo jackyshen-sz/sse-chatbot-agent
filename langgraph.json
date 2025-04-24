@@ -1,0 +1,8 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "sse-chatbot": "./src/app/graph.py:graph"
+  },
+  "python_version": "3.12",
+  "env": ".env"
+}
